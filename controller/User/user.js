@@ -4,7 +4,6 @@ const User = require('../../models/user');
 exports.getProfile = async (req, res, next) => {
   try {
     const { id } = req.params;
-    console.log(id);
     const existUser = await User.aggregate([
       [
         {
@@ -38,3 +37,40 @@ exports.getProfile = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.getPublicUsers = async (req, res, next) => {
+    try {
+      const { userId } = req;
+
+      const existUser = await User.aggregate([
+        [
+          {
+            $match: {
+              public:  true,
+              _id: { $ne: Types.ObjectId.createFromHexString(userId)}
+            },
+          },
+          {
+            $project: {
+              email: 1,
+              name: 1,
+              bio: 1,
+              photo: 1,
+            },
+          },
+        ],
+      ]);
+      if (!existUser.length) {
+        const error = new Error('User not found');
+        error.status = 422;
+        throw error;
+      }
+  
+      res.status(200).json({ message: 'Public Users Fetched', user: existUser });
+    } catch (err) {
+      if (!err.status) {
+        err.status = 500;
+      }
+      next(err);
+    }
+  };

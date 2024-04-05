@@ -1,6 +1,9 @@
 const User = require('../../models/user');
+const UserType = require('../../models/userType');
 const bcrypt = require('bcryptjs');
 const JWT = require('jsonwebtoken');
+
+const userType = 'user';
 
 exports.signup = async (req, res, next) => {
   try {
@@ -15,6 +18,14 @@ exports.signup = async (req, res, next) => {
     
     if(phone.length != 10){
       const error = new Error('Enter Valid Phone Number');
+      error.status = 422;
+      throw error;
+    }
+    const userTypeId = await UserType.findOne({ userType: userType });
+    console.log(userTypeId);
+
+    if (userTypeId) {
+      const error = new Error('UserType Error');
       error.status = 422;
       throw error;
     }
@@ -42,6 +53,8 @@ exports.signup = async (req, res, next) => {
       password: hashedPass,
       name: name,
       photo: '',
+      public: false,
+      userType: userTypeId
     });
 
     const createdUser = await user.save();

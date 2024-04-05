@@ -8,7 +8,7 @@ exports.getProfile = async (req, res, next) => {
       [
         {
           $match: {
-            _id:  Types.ObjectId.createFromHexString(id),
+            _id: Types.ObjectId.createFromHexString(id),
           },
         },
         {
@@ -39,38 +39,81 @@ exports.getProfile = async (req, res, next) => {
 };
 
 exports.getPublicUsers = async (req, res, next) => {
-    try {
-      const { userId } = req;
+  try {
+    const { userId } = req;
 
-      const existUser = await User.aggregate([
-        [
-          {
-            $match: {
-              public:  true,
-              _id: { $ne: Types.ObjectId.createFromHexString(userId)}
-            },
+    const existUser = await User.aggregate([
+      [
+        {
+          $match: {
+            public: true,
+            _id: { $ne: Types.ObjectId.createFromHexString(userId) },
           },
-          {
-            $project: {
-              email: 1,
-              name: 1,
-              bio: 1,
-              photo: 1,
-            },
+        },
+        {
+          $project: {
+            email: 1,
+            name: 1,
+            bio: 1,
+            photo: 1,
           },
-        ],
-      ]);
-      if (!existUser.length) {
+        },
+      ],
+    ]);
+    if (!existUser.length) {
+      const error = new Error('User not found');
+      error.status = 422;
+      throw error;
+    }
+
+    res.status(200).json({ message: 'Public Users Fetched', user: existUser });
+  } catch (err) {
+    if (!err.status) {
+      err.status = 500;
+    }
+    next(err);
+  }
+};
+
+exports.updateUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { name, email, photo, bio, phone } = req.body;
+
+    if(phone.length != 10){
+        const error = new Error('Enter Valid Phone Number');
+        error.status = 422;
+        throw error;
+    }
+    
+    const existUser = await User.findById(id);
+
+    if (!existUser) {
         const error = new Error('User not found');
         error.status = 422;
         throw error;
-      }
-  
-      res.status(200).json({ message: 'Public Users Fetched', user: existUser });
-    } catch (err) {
-      if (!err.status) {
-        err.status = 500;
-      }
-      next(err);
     }
-  };
+
+    existUser.name = name;
+    existUser.email = email;
+    existUser.bio = bio;
+    existUser.phone = phone;
+    existUser.photo = photo;
+
+    const updatedUser = await existUser.save();
+
+    if (!updatedUser) {
+        const error = new Error('User not updated');
+        error.status = 422;
+        throw error;
+    }
+
+    res.status(200).json({message: "User Updated", user: updatedUser});
+
+  } catch (err) {
+    if (!err.status) {
+      err.status = 500;
+    }
+    next(err);
+  }
+};

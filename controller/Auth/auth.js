@@ -12,6 +12,12 @@ exports.signup = async (req, res, next) => {
       error.status = 422;
       throw error;
     }
+    
+    if(phone.length != 10){
+      const error = new Error('Enter Valid Phone Number');
+      error.status = 422;
+      throw error;
+    }
 
     const existPhone = await User.findOne({ phone: phone });
 

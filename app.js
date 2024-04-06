@@ -2,12 +2,16 @@ const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const app = express();
+const multer = require('multer');
+const bodyParser = require('body-parser');
 
 const authRouter = require('./router/Auth/auth');
 const userRouter = require('./router/User/user');
 const adminRouter = require('./router/Admin/admin');
 
 app.use(express.json());
+app.use(bodyParser.json());
+app.use(express.urlencoded({ extended: true }));
 dotenv.config({ path: './config/.env' });
 
 app.use((req, res, next) => {
@@ -19,6 +23,8 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   next();
 });
+
+app.use(multer().single('image'));
 
 app.use('',authRouter);
 app.use('/user',userRouter);

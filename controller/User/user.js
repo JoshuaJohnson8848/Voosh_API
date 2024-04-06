@@ -1,6 +1,10 @@
 const { Types } = require('mongoose');
 const User = require('../../models/user');
 const bcrypt = require('bcryptjs');
+const s3 = require('../../utils/aws');
+const { generatePresignedUrl, deleteImage } = require('../../utils/getImg');
+const { v4: uuidv4 } = require('uuid');
+const { Exp, AWS_Bucket_Name } = require('../../config/awsCred');
 
 exports.getProfile = async (req, res, next) => {
   try {
@@ -28,6 +32,13 @@ exports.getProfile = async (req, res, next) => {
       const error = new Error('User not found');
       error.status = 422;
       throw error;
+    }
+
+    const imageUrl = await generatePresignedUrl(AWS_Bucket_Name, existUser[0]?.photo, Exp);
+    console.log(imageUrl);
+
+    if(imageUrl){
+      existUser[0].photo = imageUrl;
     }
 
     res.status(200).json({ message: 'User Fetched', user: existUser[0] });
@@ -99,7 +110,6 @@ exports.updateUser = async (req, res, next) => {
     existUser.email = email;
     existUser.bio = bio;
     existUser.phone = phone;
-    existUser.photo = photo;
 
     const updatedUser = await existUser.save();
 
@@ -190,4 +200,87 @@ exports.resetPassword = async (req, res, next) => {
       next(err);
     }
   }
+
+exports.manageProfilePic = async(req,res,next)=>{
+  try{
+    const { userId } = req;
+    const image  = req.file;
+
+    if(!image){
+      const error = new Error('Image not found');
+      error.status = 404;
+      throw error;
+    }
+    const user = await User.findById(userId);
+
+    if(!user){
+      const error = new Error('User not found');
+      error.status = 404;
+      throw error;
+    }
+
+    const params = {
+      Bucket: AWS_Bucket_Name,
+      Key: `images/${userId}-${uuidv4()}-${image.originalname}`,
+      Body: image.buffer,
+      ContentType: image.mimetype
+    };
+
+    const uKey = await s3.upload(params).promise();
+
+    if(!uKey){
+      const error = new Error('Image upload Failed');
+      error.status = 422;
+      throw error;
+    }
+
+    user.photo = await uKey?.Key;
+
+    const updatedImg = await user.save();
+    if(!updatedImg){
+      const error = new Error('Image upload Failed');
+      error.status = 422;
+      throw error;
+    }
+
+    res.status(200).json({message: "Image Updated"});
+
+  }catch(err){
+    if (!err.status) {
+      err.status = 500;
+    }
+    next(err);
+  }
+}
+
+exports.deleteImg = async(req, res,next)=>{
+  try{
+    const { userId } = req;
+    const user = await User.findById(userId);
+    
+    if(!user){
+      const error = new Error('Image Delete Failed');
+      error.status = 422;
+      throw error;
+    }
+
+    const deleted = await deleteImage(AWS_Bucket_Name, user.photo);
+    if(!deleted){
+      const error = new Error('Image Delete Failed');
+      error.status = 422;
+      throw error;
+    }
+
+    user.photo = '';
+    await user.save();
+
+    res.status(200).json({message: "Image Deleted"})
+
+  }catch(err){
+    if (!err.status) {
+      err.status = 500;
+    }
+    next(err);
+  }
+}
   

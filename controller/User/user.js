@@ -6,6 +6,8 @@ const { generatePresignedUrl, deleteImage } = require('../../utils/getImg');
 const { v4: uuidv4 } = require('uuid');
 const { Exp, AWS_Bucket_Name } = require('../../config/awsCred');
 
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 exports.getProfile = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -91,6 +93,12 @@ exports.updateUser = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { name, email, photo, bio, phone } = req.body;
+
+    if (!emailRegex.test(email)) {
+      const error = new Error('Invalid Email Format');
+      error.status = 422;
+      throw error;
+    }
 
     if(phone.length != 10){
         const error = new Error('Enter Valid Phone Number');

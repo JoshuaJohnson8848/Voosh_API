@@ -3,11 +3,20 @@ const UserType = require('../../models/userType');
 const bcrypt = require('bcryptjs');
 const JWT = require('jsonwebtoken');
 
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const userType = 'user';
 
 exports.signup = async (req, res, next) => {
   try {
     const { email, pass, name, phone, bio } = req.body;
+
+    if (!emailRegex.test(email)) {
+      const error = new Error('Invalid Email Format');
+      error.status = 422;
+      throw error;
+    }
+
     const existUser = await User.findOne({ email: email });
 
     if (existUser) {

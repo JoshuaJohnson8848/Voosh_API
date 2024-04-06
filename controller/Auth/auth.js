@@ -21,10 +21,9 @@ exports.signup = async (req, res, next) => {
       error.status = 422;
       throw error;
     }
-    const userTypeId = await UserType.findOne({ userType: userType });
-    console.log(userTypeId);
+    const userTypeId = await UserType.findOne({ userType: userType }).select('_id');
 
-    if (userTypeId) {
+    if (!userTypeId) {
       const error = new Error('UserType Error');
       error.status = 422;
       throw error;
@@ -54,7 +53,7 @@ exports.signup = async (req, res, next) => {
       name: name,
       photo: '',
       public: false,
-      userType: userTypeId
+      userType: userTypeId._id
     });
 
     const createdUser = await user.save();
@@ -88,7 +87,7 @@ exports.login = async (req, res, next) => {
         },
         {
           $lookup: {
-            from: "userTypes",
+            from: "usertypes",
             localField: "userType",
             foreignField: "_id",
             as: "userTypeData",
@@ -130,6 +129,7 @@ exports.login = async (req, res, next) => {
       {
         email: loadedUser.email,
         userId: loadedUser._id.toString(),
+        userType: loadedUser.userType.toString()
       },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
@@ -149,4 +149,3 @@ exports.login = async (req, res, next) => {
     next(err);
   }
 };
-

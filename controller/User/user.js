@@ -144,7 +144,7 @@ exports.resetPassword = async (req, res, next) => {
         const updatedUser = await existUser.save();
   
         if (!updatedUser) {
-          const error = new Error('Upassword not resetted');
+          const error = new Error('password not resetted');
           error.status = 422;
           throw error;
         }
@@ -158,3 +158,36 @@ exports.resetPassword = async (req, res, next) => {
       next(err);
     }
   };
+
+  exports.setPrivacy = async(req,res,next)=>{
+    try{
+      const { userId } = req;
+      const { active } = req.body;
+      
+      const user = await User.findById(userId);
+      
+      if (!user) {
+        const error = new Error('User not found');
+        error.status = 404;
+        throw error;
+      }
+
+      user.public = active;
+
+      const updatedUser = await user.save();
+      
+      if (!updatedUser) {
+        const error = new Error('User privacy not updated');
+        error.status = 422;
+        throw error;
+      }
+      res.status(200).json({message: "Profile Privacy Changed"});
+
+    }catch(err){
+      if (!err.status) {
+        err.status = 500;
+      }
+      next(err);
+    }
+  }
+  

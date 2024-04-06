@@ -4,6 +4,8 @@ const dotenv = require('dotenv');
 const app = express();
 
 const authRouter = require('./router/Auth/auth');
+const userRouter = require('./router/User/user');
+const adminRouter = require('./router/Admin/admin');
 
 app.use(express.json());
 dotenv.config({ path: './config/.env' });
@@ -19,6 +21,8 @@ app.use((req, res, next) => {
 });
 
 app.use('',authRouter);
+app.use('/user',userRouter);
+app.use('/admin',adminRouter);
 
 app.use((error, req, res, next) => {
   const data = error.data;

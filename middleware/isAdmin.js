@@ -20,6 +20,13 @@ module.exports = async (req, res, next) => {
       error.status = 401;
       throw error;
     }
+    console.log(decodedToken);
+
+    if (decodedToken.userType != 'admin') {
+        const error = new Error('Not Authorized');
+        error.status = 401;
+        throw error;
+      }
 
     req.userId = decodedToken.userId;
     req.email = decodedToken.email;

@@ -17,6 +17,6 @@ router.put('/:id',isAuth, userController.updateUser);
 
 router.post('/image',isAuth, userController.manageProfilePic);
 
-router.post('/deleteImg',isAuth, userController.deleteImg);
+router.delete('/deleteImg',isAuth, userController.deleteImg);
 
 module.exports = router;

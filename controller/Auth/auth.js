@@ -150,6 +150,7 @@ exports.login = async (req, res, next) => {
         message: 'Succesfully Logged In',
         token: token,
         userType: loadedUser.userType,
+        userId: loadedUser._id
       });
   } catch (err) {
     if (!err.status) {

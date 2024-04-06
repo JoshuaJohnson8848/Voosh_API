@@ -37,7 +37,6 @@ exports.getProfile = async (req, res, next) => {
     }
 
     const imageUrl = await generatePresignedUrl(AWS_Bucket_Name, existUser[0]?.photo, Exp);
-    console.log(imageUrl);
 
     if(imageUrl){
       existUser[0].photo = imageUrl;
